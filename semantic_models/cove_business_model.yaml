@@ -1,0 +1,263 @@
+# Semantic Model for Chain of Verification (CoVe) Project
+# This model enables Cortex Analyst to answer natural language queries about business data
+
+name: cove_business_model
+description: |
+  Business analytics semantic model for the CoVe verification system.
+  Supports queries about revenue, orders, customers, products, and performance metrics.
+
+# Database context
+database: COVE_PROJECT_DB
+schema: RAW_DATA
+
+# Table definitions
+tables:
+  - name: ORDERS
+    description: Customer order transactions containing all purchase records
+    base_table:
+      database: COVE_PROJECT_DB
+      schema: RAW_DATA
+      table: ORDERS
+    
+    columns:
+      - name: ORDER_ID
+        description: Unique identifier for each order
+        expr: ORDER_ID
+        data_type: VARCHAR
+        
+      - name: CUSTOMER_ID
+        description: Reference to the customer who placed the order
+        expr: CUSTOMER_ID
+        data_type: VARCHAR
+        
+      - name: PRODUCT_ID
+        description: Reference to the product purchased
+        expr: PRODUCT_ID
+        data_type: VARCHAR
+        
+      - name: QUANTITY
+        description: Number of units purchased in the order
+        expr: QUANTITY
+        data_type: NUMBER
+        
+      - name: UNIT_PRICE
+        description: Price per unit at time of purchase
+        expr: UNIT_PRICE
+        data_type: NUMBER
+        
+      - name: AMOUNT
+        description: Total order value (quantity * unit_price)
+        expr: AMOUNT
+        data_type: NUMBER
+        synonyms:
+          - revenue
+          - sales
+          - total
+          - order value
+          - order amount
+        
+      - name: ORDER_DATE
+        description: Date when the order was placed
+        expr: ORDER_DATE
+        data_type: DATE
+        
+      - name: QUARTER
+        description: Fiscal quarter of the order (e.g., Q4-2024)
+        expr: QUARTER
+        data_type: VARCHAR
+        synonyms:
+          - fiscal quarter
+          - period
+        
+      - name: STATUS
+        description: Order status (completed, pending, cancelled, refunded)
+        expr: STATUS
+        data_type: VARCHAR
+
+  - name: PRODUCTS
+    description: Product catalog with pricing and inventory information
+    base_table:
+      database: COVE_PROJECT_DB
+      schema: RAW_DATA
+      table: PRODUCTS
+    
+    columns:
+      - name: PRODUCT_ID
+        description: Unique product identifier
+        expr: PRODUCT_ID
+        data_type: VARCHAR
+        
+      - name: NAME
+        description: Product name
+        expr: NAME
+        data_type: VARCHAR
+        synonyms:
+          - product name
+          - title
+        
+      - name: DESCRIPTION
+        description: Detailed product description
+        expr: DESCRIPTION
+        data_type: VARCHAR
+        
+      - name: CATEGORY
+        description: Product category (Electronics, Furniture, Software)
+        expr: CATEGORY
+        data_type: VARCHAR
+        synonyms:
+          - product category
+          - type
+        
+      - name: SUBCATEGORY
+        description: Product subcategory
+        expr: SUBCATEGORY
+        data_type: VARCHAR
+        
+      - name: PRICE
+        description: Current retail price
+        expr: PRICE
+        data_type: NUMBER
+        synonyms:
+          - retail price
+          - list price
+
+  - name: CUSTOMERS
+    description: Customer master data with segmentation and contact information
+    base_table:
+      database: COVE_PROJECT_DB
+      schema: RAW_DATA
+      table: CUSTOMERS
+    
+    columns:
+      - name: CUSTOMER_ID
+        description: Unique customer identifier
+        expr: CUSTOMER_ID
+        data_type: VARCHAR
+        
+      - name: NAME
+        description: Customer or company name
+        expr: NAME
+        data_type: VARCHAR
+        synonyms:
+          - customer name
+          - company name
+        
+      - name: SEGMENT
+        description: Customer segment (Enterprise, SMB, Consumer)
+        expr: SEGMENT
+        data_type: VARCHAR
+        synonyms:
+          - customer segment
+          - tier
+          - customer type
+        
+      - name: REGION
+        description: Geographic region (North America, Europe, Asia Pacific)
+        expr: REGION
+        data_type: VARCHAR
+        synonyms:
+          - geographic region
+          - territory
+        
+      - name: COUNTRY
+        description: Customer country
+        expr: COUNTRY
+        data_type: VARCHAR
+        
+      - name: LIFETIME_VALUE
+        description: Total customer lifetime value
+        expr: LIFETIME_VALUE
+        data_type: NUMBER
+        synonyms:
+          - LTV
+          - CLV
+          - customer value
+
+# Relationships between tables
+relationships:
+  - name: orders_to_customers
+    left_table: ORDERS
+    left_column: CUSTOMER_ID
+    right_table: CUSTOMERS
+    right_column: CUSTOMER_ID
+    relationship_type: many_to_one
+    
+  - name: orders_to_products
+    left_table: ORDERS
+    left_column: PRODUCT_ID
+    right_table: PRODUCTS
+    right_column: PRODUCT_ID
+    relationship_type: many_to_one
+
+# Pre-defined metrics for common calculations
+metrics:
+  - name: total_revenue
+    description: Total revenue from all orders
+    expr: SUM(ORDERS.AMOUNT)
+    data_type: NUMBER
+    synonyms:
+      - revenue
+      - total sales
+      - sales amount
+    
+  - name: order_count
+    description: Total number of unique orders
+    expr: COUNT(DISTINCT ORDERS.ORDER_ID)
+    data_type: NUMBER
+    synonyms:
+      - number of orders
+      - orders count
+    
+  - name: avg_order_value
+    description: Average value per order
+    expr: AVG(ORDERS.AMOUNT)
+    data_type: NUMBER
+    synonyms:
+      - AOV
+      - average order
+      - mean order value
+    
+  - name: total_units_sold
+    description: Total quantity of products sold
+    expr: SUM(ORDERS.QUANTITY)
+    data_type: NUMBER
+    synonyms:
+      - units sold
+      - quantity sold
+    
+  - name: unique_customers
+    description: Count of distinct customers
+    expr: COUNT(DISTINCT ORDERS.CUSTOMER_ID)
+    data_type: NUMBER
+    synonyms:
+      - customer count
+      - number of customers
+
+# Time dimensions for date-based analysis
+time_dimensions:
+  - name: order_date
+    description: Date dimension for order analysis
+    expr: ORDERS.ORDER_DATE
+    data_type: DATE
+    
+# Filters for common query patterns
+filters:
+  - name: completed_orders
+    description: Filter for completed orders only
+    expr: ORDERS.STATUS = 'completed'
+    
+  - name: enterprise_customers
+    description: Filter for Enterprise segment customers
+    expr: CUSTOMERS.SEGMENT = 'Enterprise'
+    
+  - name: q4_2024
+    description: Filter for Q4 2024 orders
+    expr: ORDERS.QUARTER = 'Q4-2024'
+
+# Sample questions for testing
+sample_questions:
+  - "What was the total revenue in Q4 2024?"
+  - "Which product category had the highest sales?"
+  - "How many Enterprise customers placed orders?"
+  - "What is the average order value by customer segment?"
+  - "List the top 5 customers by revenue"

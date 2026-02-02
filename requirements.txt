@@ -1,0 +1,12 @@
+# Streamlit
+streamlit>=1.35.0
+
+# HTTP client for Cortex Agent REST API
+httpx>=0.27.0
+requests>=2.31.0
+
+# Config parsing
+toml>=0.10.2
+
+# Data
+pandas>=2.0.0

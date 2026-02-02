@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  cove-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cove-streamlit
+    ports:
+      - "8503:8503"
+    volumes:
+      # Mount Snowflake config for PAT access
+      - ~/.snowflake:/root/.snowflake:ro
+    environment:
+      - STREAMLIT_SERVER_PORT=8503
+      - STREAMLIT_SERVER_ADDRESS=0.0.0.0
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8503/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  default:
+    name: cove-network
